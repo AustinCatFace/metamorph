@@ -2,15 +2,16 @@ buildscript
 {
     repositories {
         jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
+        maven { url = "https://maven.minecraftforge.net/" }
+        mavenCentral()
     }
     
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3+'
     }
 }
 
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'net.minecraftforge.gradle'
 
 if (project.hasProperty("dev")) 
 {
@@ -28,211 +29,234 @@ compileJava
 
 /* Minecraft configuration */
 
-minecraft 
-{
-    version = "${mc_version}-${forge_version}"
-    runDir = "run"
-    mappings = snapshot
-    
-    clientJvmArgs = ["-Xmx1G"]
-    serverJvmArgs = ["-Xmx1G"]
-    
-    replace "%VERSION%", project.version
-    replace "%MCLIB%", project.mclib
+minecraft {
+//    version = "${mc_version}-${forge_version}"
+//    runDir = "run"
+//    mappings = snapshot
+//
+//    clientJvmArgs = ["-Xmx1G"]
+//    serverJvmArgs = ["-Xmx1G"]
+//
+//    replace "%VERSION%", project.version
+//    replace "%MCLIB%", project.mclib
+
+    mappings channel: 'snapshot', version: '20171003-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+        }
+
+        server {
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+        }
+    }
 }
 
 dependencies 
 {
-	compile files("run/libs/mclib-${mclib}-${project.minecraft.version}-dev.jar")
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2859'
+	compile files("mclib-2.4.3-1.12.2.jar")
 }
 
-eclipse
-{
-    classpath
-    {
-        file
-        {
-            whenMerged
-            { classpath -> 
-                def ver = project.minecraft.version
-                /* Fucking gradle 2.14 doesn't have fileReference() method,
-                 * screw you piece of shit */
-                def getMeReference = { File file ->
-                	return [
-                		getFile: { return file },
-                		getPath: { return file.getAbsolutePath() },
-                		getJarURL: { return file.getAbsolutePath() },
-                		isRelativeToPathVariable: { return false }
-                	] as org.gradle.plugins.ide.eclipse.model.FileReference
-                }
-                
-                def lib = entries.find { it.path.contains "mclib-${mclib}" } 
-                lib.sourcePath = getMeReference(file("run/libs/mclib-${mclib}-${ver}-sources.jar"))
-            }
-        }
-    }
-}
+//eclipse
+//{
+//    classpath
+//    {
+//        file
+//        {
+//            whenMerged
+//            { classpath ->
+//                def ver = project.minecraft.version
+//                /* Fucking gradle 2.14 doesn't have fileReference() method,
+//                 * screw you piece of shit */
+//                def getMeReference = { File file ->
+//                	return [
+//                		getFile: { return file },
+//                		getPath: { return file.getAbsolutePath() },
+//                		getJarURL: { return file.getAbsolutePath() },
+//                		isRelativeToPathVariable: { return false }
+//                	] as org.gradle.plugins.ide.eclipse.model.FileReference
+//                }
+//
+//                def lib = entries.find { it.path.contains "mclib-${mclib}" }
+//                lib.sourcePath = getMeReference(file("run/libs/mclib-${mclib}-${ver}-sources.jar"))
+//            }
+//        }
+//    }
+//}
 
-processResources
-{
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    project.version += "-" + project.minecraft.version
-    
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-                
-        expand 'version':project.version, 'mcversion':project.minecraft.version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
-}
-
-task deobfJar(type: Jar) {
-    from sourceSets.main.output
-    classifier = 'dev'
-}
-
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allJava
-    classifier = 'sources'
-}
-
-artifacts {
-    archives deobfJar
-    archives sourcesJar
-}
-
-/* Comparing keys */
-task compareLangFiles {
-    doLast {
-        def help = file("src/main/resources/assets/${project.archivesBaseName}/lang/")
-        def parse = { File file ->
-            def map = new HashMap()
-            def splits = file.text.split("\n");
-
-            for (split in splits) {
-                def index = split.indexOf("=")
-
-                if (index == -1) {
-                    continue
-                }
-
-                map.put(split.substring(0, index), true)
-            }
-
-            return map
-        }
-
-        if (!help.exists()) {
-            return
-        }
-
-        def en = file("${help.getAbsolutePath()}/en_US.lang")
-        def en_map = parse(en)
-
-        for (lang_file in help.listFiles()) {
-            if (!lang_file.name.endsWith(".lang") || lang_file.name.startsWith("en_US")) {
-                continue
-            }
-
-            def lang_map = parse(lang_file)
-            def missing = new ArrayList()
-            def extra = new ArrayList()
-
-            for (key in en_map.keySet()) {
-                if (!lang_map.containsKey(key)) {
-                    missing.add(key)
-                }
-            }
-
-            for (key in lang_map.keySet()) {
-                if (!en_map.containsKey(key)) {
-                    extra.add(key)
-                }
-            }
-
-            missing.sort()
-            extra.sort()
-
-            print("\n")
-
-            if (!missing.isEmpty() || !extra.isEmpty()) {
-                if (!missing.isEmpty()) {
-                    print("Language file ${lang_file.getName()} misses following keys:\n")
-
-                    for (key in missing) {
-                        print("- ${key}\n")
-                    }
-                }
-
-                if (!extra.isEmpty()) {
-                    print("Language file ${lang_file.getName()} has additional keys:\n")
-
-                    for (key in extra) {
-                        print("- ${key}\n")
-                    }
-                }
-            }
-            else {
-                print("Language file ${lang_file.getName()} fully matches ${en.getName()}!\n")
-            }
-        }
-    }
-}
-
-task copyLangStrings {
-    doLast {
-        def parse = { File file ->
-            def map = new HashMap()
-            def splits = file.text.split("\n");
-
-            for (split in splits) {
-                def index = split.indexOf("=")
-
-                if (index == -1) {
-                    continue
-                }
-
-                map.put(split.substring(0, index), split.substring(index + 1))
-            }
-
-            return map
-        }
-        
-        def help = file("src/main/resources/assets/${project.archivesBaseName}/lang/")
-        def en = file("${help.getAbsolutePath()}/en_US.lang")
-
-        for (file in help.listFiles())
-        {
-            if (file.name.endsWith(".lang") && !file.name.startsWith("en_"))
-            {
-                def strings = parse(file)
-                def splits = en.text.split("\n")
-
-                for (def i = 0; i < splits.length; i++) {
-                    def str = splits[i];
-
-                    if (str.contains("=")) {
-                        def index = str.indexOf("=")
-                        def key = str.substring(0, index)
-                        def value = str.substring(index)
-
-                        if (strings.containsKey(key)) {
-                            splits[i] = key + "=" + strings.get(key)
-                        }
-                    }
-                }
-
-                file.write(splits.join("\n"))
-
-                print("Wrote to ${file.name}...")
-            }
-        }
-
-        print("Done!")
-    }
-}
+//processResources
+//{
+//    inputs.property "version", project.version
+//    inputs.property "mcversion", project.minecraft.version
+//
+//    project.version += "-" + project.minecraft.version
+//
+//    from(sourceSets.main.resources.srcDirs) {
+//        include 'mcmod.info'
+//
+//        expand 'version':project.version, 'mcversion':project.minecraft.version
+//    }
+//
+//    from(sourceSets.main.resources.srcDirs) {
+//        exclude 'mcmod.info'
+//    }
+//}
+//
+//task deobfJar(type: Jar) {
+//    from sourceSets.main.output
+//    classifier = 'dev'
+//}
+//
+//task sourcesJar(type: Jar) {
+//    from sourceSets.main.allJava
+//    classifier = 'sources'
+//}
+//
+//artifacts {
+//    archives deobfJar
+//    archives sourcesJar
+//}
+//
+///* Comparing keys */
+//task compareLangFiles {
+//    doLast {
+//        def help = file("src/main/resources/assets/${project.archivesBaseName}/lang/")
+//        def parse = { File file ->
+//            def map = new HashMap()
+//            def splits = file.text.split("\n");
+//
+//            for (split in splits) {
+//                def index = split.indexOf("=")
+//
+//                if (index == -1) {
+//                    continue
+//                }
+//
+//                map.put(split.substring(0, index), true)
+//            }
+//
+//            return map
+//        }
+//
+//        if (!help.exists()) {
+//            return
+//        }
+//
+//        def en = file("${help.getAbsolutePath()}/en_US.lang")
+//        def en_map = parse(en)
+//
+//        for (lang_file in help.listFiles()) {
+//            if (!lang_file.name.endsWith(".lang") || lang_file.name.startsWith("en_US")) {
+//                continue
+//            }
+//
+//            def lang_map = parse(lang_file)
+//            def missing = new ArrayList()
+//            def extra = new ArrayList()
+//
+//            for (key in en_map.keySet()) {
+//                if (!lang_map.containsKey(key)) {
+//                    missing.add(key)
+//                }
+//            }
+//
+//            for (key in lang_map.keySet()) {
+//                if (!en_map.containsKey(key)) {
+//                    extra.add(key)
+//                }
+//            }
+//
+//            missing.sort()
+//            extra.sort()
+//
+//            print("\n")
+//
+//            if (!missing.isEmpty() || !extra.isEmpty()) {
+//                if (!missing.isEmpty()) {
+//                    print("Language file ${lang_file.getName()} misses following keys:\n")
+//
+//                    for (key in missing) {
+//                        print("- ${key}\n")
+//                    }
+//                }
+//
+//                if (!extra.isEmpty()) {
+//                    print("Language file ${lang_file.getName()} has additional keys:\n")
+//
+//                    for (key in extra) {
+//                        print("- ${key}\n")
+//                    }
+//                }
+//            }
+//            else {
+//                print("Language file ${lang_file.getName()} fully matches ${en.getName()}!\n")
+//            }
+//        }
+//    }
+//}
+//
+//task copyLangStrings {
+//    doLast {
+//        def parse = { File file ->
+//            def map = new HashMap()
+//            def splits = file.text.split("\n");
+//
+//            for (split in splits) {
+//                def index = split.indexOf("=")
+//
+//                if (index == -1) {
+//                    continue
+//                }
+//
+//                map.put(split.substring(0, index), split.substring(index + 1))
+//            }
+//
+//            return map
+//        }
+//
+//        def help = file("src/main/resources/assets/${project.archivesBaseName}/lang/")
+//        def en = file("${help.getAbsolutePath()}/en_US.lang")
+//
+//        for (file in help.listFiles())
+//        {
+//            if (file.name.endsWith(".lang") && !file.name.startsWith("en_"))
+//            {
+//                def strings = parse(file)
+//                def splits = en.text.split("\n")
+//
+//                for (def i = 0; i < splits.length; i++) {
+//                    def str = splits[i];
+//
+//                    if (str.contains("=")) {
+//                        def index = str.indexOf("=")
+//                        def key = str.substring(0, index)
+//                        def value = str.substring(index)
+//
+//                        if (strings.containsKey(key)) {
+//                            splits[i] = key + "=" + strings.get(key)
+//                        }
+//                    }
+//                }
+//
+//                file.write(splits.join("\n"))
+//
+//                print("Wrote to ${file.name}...")
+//            }
+//        }
+//
+//        print("Done!")
+//    }
+//}
