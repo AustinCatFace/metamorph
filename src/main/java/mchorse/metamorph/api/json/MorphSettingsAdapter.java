@@ -112,6 +112,8 @@ public class MorphSettingsAdapter implements JsonDeserializer<MorphSettings>
             morph.betterLightsShadow = object.get("betterlights_shadow").getAsBoolean();
         }
 
+        morph.glowing = object.has("glowing") && object.get("glowing").getAsBoolean();
+
         return morph;
     }
 }

@@ -31,6 +31,7 @@ public class GuiSettingsPanel extends GuiMorphPanel<AbstractMorph, GuiAbstractMo
 
     public GuiKeybindElement keybind;
     public GuiButtonElement reset;
+    public GuiButtonElement glowing;
     public GuiTextElement displayName;
     public GuiStringListElement abilities;
     public GuiStringListElement attack;
@@ -141,6 +142,16 @@ public class GuiSettingsPanel extends GuiMorphPanel<AbstractMorph, GuiAbstractMo
             .increment(0.25F);
         this.data = new GuiTextElement(mc, 1000000, this::editNBT);
 
+        this.glowing = new GuiButtonElement(mc, IKey.lang("metamorph.gui.editor.glowing"), (button) ->
+        {
+            this.morph.forceEditSettings((settings) ->
+            {
+                settings.glowing = !settings.glowing;
+            });
+
+            this.updateNBT();
+        });
+
         this.abilities.flex().h(80);
         this.attack.flex().h(80);
         this.action.flex().h(80);
@@ -172,6 +183,7 @@ public class GuiSettingsPanel extends GuiMorphPanel<AbstractMorph, GuiAbstractMo
         this.right.add(this.hitboxEnabled);
         this.right.add(Elements.label(IKey.lang("metamorph.gui.editor.hitbox.size")).marginTop(8), this.hitboxWidth, this.hitboxHeight, this.hitboxSneakingHeight);
         this.right.add(Elements.label(IKey.lang("metamorph.gui.editor.hitbox.eye")).marginTop(8), this.hitboxEyePosition);
+        this.right.add(Elements.label(IKey.lang("metamorph.gui.editor.glowing")).marginTop(8), this.glowing);
 
         /* Optifine shadowpass control */
         this.shadowOption = new GuiCirculateElement(mc, (element) -> 
@@ -232,6 +244,7 @@ public class GuiSettingsPanel extends GuiMorphPanel<AbstractMorph, GuiAbstractMo
 
         this.shadowOption.setValue(morph.getSettings().shadowOption);
         this.betterLightsShadow.toggled(morph.getSettings().betterLightsShadow);
+
     }
 
     public void updateNBT()

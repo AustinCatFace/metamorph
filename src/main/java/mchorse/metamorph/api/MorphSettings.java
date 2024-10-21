@@ -35,6 +35,7 @@ public class MorphSettings
         DEFAULT.hostile = false;
         DEFAULT.hands = true;
         DEFAULT.updates = false;
+        DEFAULT.glowing = false;
     }
 
     /**
@@ -97,6 +98,8 @@ public class MorphSettings
     public boolean hasShadowOption = true;
     public boolean betterLightsShadow = true;
     public boolean hasbetterLightsShadow = true;
+
+    public boolean glowing = false;
     
     /**
      * Morph settings applier lambda
@@ -114,6 +117,7 @@ public class MorphSettings
             MorphSettings settings = (MorphSettings) obj;
 
             return (this.hasAbilities == settings.hasAbilities && (this.abilities.equals(settings.abilities) || this.hasAbilities == false)) &&
+                    (this.glowing == settings.glowing && (Objects.equals(this.glowing,settings.glowing))) &&
                 (this.hasAction == settings.hasAction && (Objects.equals(this.action, settings.action) || this.hasAction == false)) &&
                 (this.hasAttack == settings.hasAttack && (Objects.equals(this.attack, settings.attack) || this.hasAttack == false)) &&
                 (this.hasHealth == settings.hasHealth && (this.health == settings.health || this.hasHealth == false)) &&
@@ -166,6 +170,8 @@ public class MorphSettings
 
         this.betterLightsShadow = setting.betterLightsShadow;
         this.hasbetterLightsShadow = setting.hasbetterLightsShadow;
+
+        this.glowing = setting.glowing;
     }
 
     /**
@@ -327,6 +333,8 @@ public class MorphSettings
         {
             buf.writeBoolean(this.betterLightsShadow);
         }
+
+        buf.writeBoolean(this.glowing);
     }
 
     /**
@@ -430,6 +438,8 @@ public class MorphSettings
         {
             this.betterLightsShadow = buf.readBoolean();
         }
+
+        this.glowing = buf.readBoolean();
     }
 
     /**
@@ -499,6 +509,8 @@ public class MorphSettings
         {
             tag.setBoolean("BetterLightsShadow", this.betterLightsShadow);
         }
+
+        tag.setBoolean("isGlowing",this.glowing);
     }
 
     /**
@@ -587,6 +599,8 @@ public class MorphSettings
         {
             this.betterLightsShadow = tag.getBoolean("BetterLightsShadow");
         }
+
+        this.glowing = tag.getBoolean("isGlowing");
     }
 
     /**

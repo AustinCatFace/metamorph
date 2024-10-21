@@ -105,6 +105,7 @@ metamorph.gui.editor.abilities_tooltip=Shift + click on the abilities in the lis
 metamorph.gui.editor.attack=Attack
 metamorph.gui.editor.action=Action
 metamorph.gui.editor.reset=Reset
+metamorph.gui.editor.glowing=Glowing
 metamorph.gui.editor.item_morph=Item
 metamorph.gui.editor.scale=Entity scale
 metamorph.gui.editor.texture=Pick a texture...

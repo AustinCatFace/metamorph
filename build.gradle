@@ -19,7 +19,7 @@ if (project.hasProperty("dev"))
 }
 
 group = "mchorse.metamorph"
-archivesBaseName = "metamorph"
+archivesBaseName = "metamorph-cf"
 sourceCompatibility = targetCompatibility = "1.8"
 
 compileJava 
